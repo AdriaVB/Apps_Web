@@ -31,9 +31,12 @@ void main() {
     () async {
       final categorias = await appDb.listarCategoriasRecurrentes();
       expect(categorias.length, Categoria.catalogoRecurrente.length);
-      expect(categorias.map((c) => c.nombre), contains('luz'));
       expect(categorias.map((c) => c.nombre), contains('hipoteca'));
       expect(categorias.map((c) => c.nombre), isNot(contains('comida')));
+      // Luz y agua no son recurrentes: su importe varía cada mes según el
+      // consumo, no encajan como gasto fijo de importe constante.
+      expect(categorias.map((c) => c.nombre), isNot(contains('luz')));
+      expect(categorias.map((c) => c.nombre), isNot(contains('agua')));
     },
   );
 
@@ -43,7 +46,8 @@ void main() {
       final categorias = await appDb.listarCategoriasVariables();
       expect(categorias.length, Categoria.catalogoVariable.length);
       expect(categorias.map((c) => c.nombre), contains('salud/higiene'));
-      expect(categorias.map((c) => c.nombre), isNot(contains('luz')));
+      expect(categorias.map((c) => c.nombre), contains('luz'));
+      expect(categorias.map((c) => c.nombre), contains('agua'));
     },
   );
 
@@ -79,23 +83,23 @@ void main() {
     },
   );
 
-  test('crear, listar y editar un gasto fijo mensual (luz)', () async {
+  test('crear, listar y editar un gasto fijo mensual (alquiler)', () async {
     final categorias = await appDb.listarCategoriasRecurrentes();
-    final luz = categorias.firstWhere((c) => c.nombre == 'luz');
+    final alquiler = categorias.firstWhere((c) => c.nombre == 'alquiler');
 
     final id = await appDb.crearGastoFijo(
-      GastoFijo(nombre: 'Luz', categoriaId: luz.id!, importe: 58.0),
+      GastoFijo(nombre: 'Alquiler', categoriaId: alquiler.id!, importe: 58.0),
     );
 
     var fijos = await appDb.listarGastosFijos();
-    var luzGuardada = fijos.firstWhere((g) => g.id == id);
-    expect(luzGuardada.importe, 58.0);
-    expect(luzGuardada.periodicidadMeses, 1);
+    var guardado = fijos.firstWhere((g) => g.id == id);
+    expect(guardado.importe, 58.0);
+    expect(guardado.periodicidadMeses, 1);
 
     // Editar el importe (llega un recibo distinto) no debe crear una fila nueva.
-    await appDb.actualizarGastoFijo(luzGuardada.copyWith(importe: 63.0));
+    await appDb.actualizarGastoFijo(guardado.copyWith(importe: 63.0));
     fijos = await appDb.listarGastosFijos();
-    expect(fijos.where((g) => g.nombre == 'Luz').length, 1);
+    expect(fijos.where((g) => g.nombre == 'Alquiler').length, 1);
     expect(fijos.firstWhere((g) => g.id == id).importe, 63.0);
   });
 
@@ -268,9 +272,13 @@ void main() {
       'genera un movimiento por cada gasto fijo activo, una sola vez',
       () async {
         final categorias = await appDb.listarCategoriasRecurrentes();
-        final luz = categorias.firstWhere((c) => c.nombre == 'luz');
+        final alquiler = categorias.firstWhere((c) => c.nombre == 'alquiler');
         await appDb.crearGastoFijo(
-          GastoFijo(nombre: 'Luz', categoriaId: luz.id!, importe: 58.0),
+          GastoFijo(
+            nombre: 'Alquiler',
+            categoriaId: alquiler.id!,
+            importe: 58.0,
+          ),
         );
         const ciclo = '2026-08-01';
 
@@ -279,7 +287,7 @@ void main() {
 
         final movimientos = await appDb.listarMovimientosDeCiclo(ciclo);
         expect(movimientos.length, 1);
-        expect(movimientos.first.nombre, 'Luz');
+        expect(movimientos.first.nombre, 'Alquiler');
         expect(movimientos.first.importe, 58.0);
         expect(movimientos.first.origen, OrigenMovimiento.fijo);
       },
@@ -287,9 +295,9 @@ void main() {
 
     test('un gasto fijo desactivado no genera movimiento', () async {
       final categorias = await appDb.listarCategoriasRecurrentes();
-      final luz = categorias.firstWhere((c) => c.nombre == 'luz');
+      final alquiler = categorias.firstWhere((c) => c.nombre == 'alquiler');
       final id = await appDb.crearGastoFijo(
-        GastoFijo(nombre: 'Luz', categoriaId: luz.id!, importe: 58.0),
+        GastoFijo(nombre: 'Alquiler', categoriaId: alquiler.id!, importe: 58.0),
       );
       final fijos = await appDb.listarGastosFijos();
       await appDb.actualizarGastoFijo(
@@ -393,9 +401,13 @@ void main() {
       'editar un gasto fijo mensual actualiza el importe ya generado este mes',
       () async {
         final categorias = await appDb.listarCategoriasRecurrentes();
-        final luz = categorias.firstWhere((c) => c.nombre == 'luz');
+        final alquiler = categorias.firstWhere((c) => c.nombre == 'alquiler');
         final id = await appDb.crearGastoFijo(
-          GastoFijo(nombre: 'Luz', categoriaId: luz.id!, importe: 58.0),
+          GastoFijo(
+            nombre: 'Alquiler',
+            categoriaId: alquiler.id!,
+            importe: 58.0,
+          ),
         );
         await appDb.generarMovimientosDelCiclo(cicloActual);
         expect(

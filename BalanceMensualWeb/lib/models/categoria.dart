@@ -30,8 +30,6 @@ class Categoria {
   }
 
   static const List<String> catalogoRecurrente = [
-    'luz',
-    'agua',
     'alquiler',
     'hipoteca',
     'seguros',
@@ -39,13 +37,18 @@ class Categoria {
     'otros',
   ];
 
+  // Luz y agua van aquí, no en catalogoRecurrente: el importe varía cada
+  // mes según el consumo real, así que no encajan como gasto fijo de
+  // importe constante (ver CLAUDE.md → Gastos/Ingresos fijos).
   static const List<String> catalogoVariable = [
+    'agua',
     'comida',
-    'restaurantes',
-    'ocio',
     'gasolina',
     'gastos coche',
     'gastos casa',
+    'luz',
+    'ocio',
+    'restaurantes',
     'salud/higiene',
     'otros',
   ];
