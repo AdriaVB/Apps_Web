@@ -22,3 +22,12 @@ Copia web de Balance Mensual (la app Android de `Apps_GooglePlay/AppGastos`, que
 - **Stack**: Flutter Web, sin backend.
 - **Almacenamiento**: `sqflite_common_ffi_web` — el mismo SQLite de siempre, compilado a WebAssembly, guardando en IndexedDB. Requiere los binarios de `dart run sqflite_common_ffi_web:setup` dentro de `web/` (`sqlite3.wasm`, `sqflite_sw.js`).
 - **Publicación**: GitHub Pages, sirviendo `flutter build web --base-href /Apps_Web/balance/`.
+
+### OpositoraGumy
+
+App de estudio para oposiciones: exámenes generales → temas → preguntas (opción múltiple o verdadero/falso), con examen del tema o examen general (preguntas al azar de todos los temas), corrección de respuestas barajada en cada intento, nota final y repaso completo. Detalle completo del diseño en `OpositoraGumy/CLAUDE.md`.
+
+- **Stack**: Flutter Web, sin backend.
+- **Almacenamiento**: Hive, local en el navegador (IndexedDB en web). Sin sincronización entre dispositivos — cada navegador tiene su propia copia. Exportar/importar manual (JSON) para no perder las preguntas si se borra el navegador.
+- **Renderer**: CanvasKit servido desde la copia local del SDK (`web/flutter_bootstrap.js` fija `canvasKitBaseUrl: "canvaskit/"`), igual que las otras apps de este repo.
+- **Publicación**: GitHub Pages, sirviendo `flutter build web --base-href /Apps_Web/opositoragumy/`.
