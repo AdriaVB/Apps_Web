@@ -1,26 +1,29 @@
 import 'package:flutter/material.dart';
 
+import '../models/configuracion_puntuacion.dart';
+import '../utils/calcular_resultado.dart';
 import '../utils/generar_examen.dart';
 
 /// Pantalla final: nota y repaso completo de cada pregunta, con la
-/// respuesta elegida y la correcta.
+/// respuesta elegida (o "sin responder") y la correcta.
 class ResultadoScreen extends StatelessWidget {
   const ResultadoScreen({
     super.key,
     required this.titulo,
     required this.preguntas,
+    required this.configuracionPuntuacion,
   });
 
   final String titulo;
   final List<PreguntaExamen> preguntas;
-
-  int get _aciertos => preguntas.where((p) => p.esCorrecta).length;
+  final ConfiguracionPuntuacion configuracionPuntuacion;
 
   @override
   Widget build(BuildContext context) {
-    final total = preguntas.length;
-    final aciertos = _aciertos;
-    final nota = total == 0 ? 0.0 : aciertos / total * 10;
+    final resultado = calcularResultado(
+      preguntas: preguntas,
+      configuracion: configuracionPuntuacion,
+    );
 
     return Scaffold(
       appBar: AppBar(title: Text(titulo), automaticallyImplyLeading: false),
@@ -31,14 +34,24 @@ class ResultadoScreen extends StatelessWidget {
             child: Column(
               children: [
                 Text(
-                  nota.toStringAsFixed(1),
+                  resultado.nota.toStringAsFixed(1),
                   style: Theme.of(context).textTheme.displayLarge,
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '$aciertos de $total correctas',
+                  '${resultado.aciertos} aciertos · ${resultado.fallos} fallos '
+                  '· ${resultado.enBlanco} en blanco',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
+                if (configuracionPuntuacion.restarErrores)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      '${resultado.puntuacion.toStringAsFixed(2)} / '
+                      '${resultado.puntuacionMaxima.toStringAsFixed(2)} puntos',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -80,9 +93,30 @@ class _FilaRepaso extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colores = Theme.of(context).colorScheme;
-    final correcta = preguntaExamen.esCorrecta;
+    final Color fondo;
+    final Color acento;
+    final IconData icono;
+    final String etiquetaRespuesta;
+
+    if (!preguntaExamen.respondida) {
+      fondo = colores.surfaceContainerHighest;
+      acento = colores.onSurfaceVariant;
+      icono = Icons.remove_circle_outline;
+      etiquetaRespuesta = 'Sin responder';
+    } else if (preguntaExamen.esCorrecta) {
+      fondo = colores.primaryContainer;
+      acento = colores.primary;
+      icono = Icons.check_circle;
+      etiquetaRespuesta = preguntaExamen.textoRespuestaElegida;
+    } else {
+      fondo = colores.errorContainer;
+      acento = colores.error;
+      icono = Icons.cancel;
+      etiquetaRespuesta = preguntaExamen.textoRespuestaElegida;
+    }
+
     return Card(
-      color: correcta ? colores.primaryContainer : colores.errorContainer,
+      color: fondo,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -91,10 +125,7 @@ class _FilaRepaso extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  correcta ? Icons.check_circle : Icons.cancel,
-                  color: correcta ? colores.primary : colores.error,
-                ),
+                Icon(icono, color: acento),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -105,8 +136,8 @@ class _FilaRepaso extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 10),
-            Text('Tu respuesta: ${preguntaExamen.textoRespuestaElegida}'),
-            if (!correcta)
+            Text('Tu respuesta: $etiquetaRespuesta'),
+            if (!preguntaExamen.esCorrecta)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(

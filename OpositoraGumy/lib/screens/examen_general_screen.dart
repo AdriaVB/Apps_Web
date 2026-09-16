@@ -4,6 +4,7 @@ import '../data/app_data.dart';
 import '../models/examen_general.dart';
 import '../models/tema.dart';
 import 'configurar_examen_screen.dart';
+import 'seleccionar_temas_screen.dart';
 import 'tema_screen.dart';
 
 /// Temas de un examen general concreto.
@@ -130,12 +131,28 @@ class _ExamenGeneralScreenState extends State<ExamenGeneralScreen> {
     );
   }
 
+  void _examenDeTemasSeleccionados() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => SeleccionarTemasScreen(
+          examenGeneral: widget.examenGeneral,
+          temas: _temas,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.examenGeneral.nombre),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.checklist_outlined),
+            tooltip: 'Examen de temas elegidos',
+            onPressed: _temas.isEmpty ? null : _examenDeTemasSeleccionados,
+          ),
           IconButton(
             icon: const Icon(Icons.quiz_outlined),
             tooltip: 'Examen general (todos los temas)',
